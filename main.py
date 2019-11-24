@@ -1,8 +1,10 @@
 import telebot
+import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import Models.dz
 import dbacsessor
+import Models.UI
 import config as cfg
 import MISC.events
 
@@ -92,14 +94,29 @@ def startMessage(message):
 /setDz <дата> - Добавляет дз на определенную дату. Пример /getDz 01.01.1978""")
 
 
+
 @bot.message_handler(regexp="/getDz \d\d.\d\d.\d\d\d\d")
 def onGetDz(message):
     logMessage(message)
-    bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы запросили дз на {message.text[7:]}')
+    #bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы запросили дз на {message.text[7:]}')
     
     for dz in Models.dz.getDz(message.text[7:]):
         bot.forward_message(message.chat.id, dz[1], dz[2])
         #bot.send_message(message.chat.id, f'{dz}')
+
+
+@bot.callback_query_handler(func = lambda call: re.match("/getDz \d\d.\d\d.\d\d\d\d", call.data))
+def onGetDzCallback(call):
+    msg = call.message
+    msg.text = call.data
+    logMessage(msg)
+    for dz in Models.dz.getDz(call.data[7:]):
+        bot.forward_message(call.message.chat.id, dz[1], dz[2])
+
+
+@bot.message_handler(commands=["getDz"])
+def onGetDzWithOutDate(message):
+    Models.UI.getDz(bot, message.chat.id)
 
 
 @bot.message_handler(commands=['done'])
@@ -110,6 +127,7 @@ def onDoneSetingDz(message):
         bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы не давали коанды на добавление домашнего задания!')
     else:
         evntStatus.settingDz = False
+
 
 @bot.message_handler(regexp="/setDz \d\d.\d\d.\d\d\d\d")
 def onSetDz(message):
