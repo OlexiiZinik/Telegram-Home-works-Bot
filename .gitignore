@@ -1,3 +1,4 @@
 .vscode
 DataBases/
 *.pyc
+tmp

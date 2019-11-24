@@ -1,6 +1,7 @@
 import telebot
 import re
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+import datetime
+from telebot import types
 
 import Models.dz
 import dbacsessor
@@ -116,7 +117,66 @@ def onGetDzCallback(call):
 
 @bot.message_handler(commands=["getDz"])
 def onGetDzWithOutDate(message):
+    logMessage(message)
     Models.UI.getDz(bot, message.chat.id)
+
+#=========================================================
+
+@bot.message_handler(regexp="/setDz \d\d.\d\d.\d\d\d\d")
+def onSetDz(message):
+    logMessage(message)
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+    bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
+    global evntStatus
+    evntStatus.settingDz = True
+    evntStatus.settingDzDate = message.text[7:]
+
+
+@bot.message_handler(commands=["setDz"])
+def onSetDzWithOutDate(message):
+    logMessage(message)
+    Models.UI.setDz(bot, message.chat.id)
+
+
+@bot.callback_query_handler(func = lambda call: re.match("/setDz \d\d.\d\d.\d\d\d\d", call.data))
+def onSetDzCallback(call):
+    msg = call.message
+    msg.text = call.data
+    logMessage(msg)
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+    bot.send_message(call.message.chat.id,f'{call.from_user.first_name}, Вы добавляете дз на {call.data[7:12]}', reply_markup=keyboard)
+    global evntStatus
+    evntStatus.settingDz = True
+    evntStatus.settingDzDate =call.data[7:]
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "/setDzWithDate")
+def onSetDzWithDate(call):
+    msg = call.message
+    msg.text = call.data
+    logMessage(msg)
+    bot.send_message(call.message.chat.id, "Укажите дату\n(день.месяц) или (день.месяц.год)\nПример 01.11 или 01.11.2019")
+    def getDate(message): 
+        if re.match("\d\d.\d\d.\d\d\d\d", message.text):
+            global evntStatus
+            evntStatus.settingDzDate = message.text
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+            bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text}', reply_markup=keyboard)
+        elif re.match("\d\d.\d\d", message.text):
+            date = datetime.datetime.strptime(message.text+"."+str(datetime.datetime.today().year), "%d.%m.%Y")
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+            bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
+            evntStatus.settingDzDate = datetime.datetime.strftime(date,"%d.%m.%Y")
+        else:
+            bot.send_message(message.chat.id, "Не правельно!\nукажите (день.месяц) или (день.месяц.год)\nПример 01.11 или 01.11.2019")
+            bot.register_next_step_handler_by_chat_id(message.chat.id, getDate)
+
+    bot.register_next_step_handler_by_chat_id(call.message.chat.id, getDate)
+    evntStatus.settingDz = True
 
 
 @bot.message_handler(commands=['done'])
@@ -129,14 +189,16 @@ def onDoneSetingDz(message):
         evntStatus.settingDz = False
 
 
-@bot.message_handler(regexp="/setDz \d\d.\d\d.\d\d\d\d")
-def onSetDz(message):
-    logMessage(message)
-    bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:]}.\nИспользуйте /done чтобы завершить')
+@bot.callback_query_handler(func = lambda call: call.data == "/done")
+def onDoneSetingDzCallback(call):
+    msg = call.message
+    msg.text = call.data
+    logMessage(msg)
     global evntStatus
-    evntStatus.settingDz = True
-    evntStatus.settingDzDate = message.text[7:]
-
+    if not evntStatus.settingDz:
+        bot.send_message(call.message.chat.id,f'{call.from_user.first_name}, Вы не давали коанды на добавление домашнего задания!')
+    else:
+        evntStatus.settingDz = False
 
 
 @bot.message_handler(content_types=['text','photo','audio'])
