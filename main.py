@@ -1,14 +1,14 @@
-import dbacsessor
 import telebot
-#import MISC.dz
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+import Models.dz
+import dbacsessor
+import config as cfg
+import MISC.events
 
-token = "710994496:AAEXqw4J-QltFeXRHuD7qEQn0qSdypyXqMs"
-bot = telebot.TeleBot(token)
-dba = dbacsessor.DBacsessor("DataBase/homeworks.sqlite")
+bot = telebot.TeleBot(cfg.Token)
 
-settingDz = False
-settingDzDate = ""
+evntStatus = MISC.events.EventStatus()
 
 """
 {
@@ -96,28 +96,29 @@ def startMessage(message):
 def onGetDz(message):
     logMessage(message)
     bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы запросили дз на {message.text[7:]}')
-    for dz in dba.getDz(message.text[7:]):
-        bot.forward_message(message.chat.id, dz[3], dz[4])
+    
+    for dz in Models.dz.getDz(message.text[7:]):
+        bot.forward_message(message.chat.id, dz[1], dz[2])
         #bot.send_message(message.chat.id, f'{dz}')
 
 
 @bot.message_handler(commands=['done'])
 def onDoneSetingDz(message):
     logMessage(message)
-    global settingDz
-    if not settingDz:
+    global evntStatus
+    if not evntStatus.settingDz:
         bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы не давали коанды на добавление домашнего задания!')
     else:
-        settingDz = False
+        evntStatus.settingDz = False
 
 @bot.message_handler(regexp="/setDz \d\d.\d\d.\d\d\d\d")
 def onSetDz(message):
     logMessage(message)
     bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:]}.\nИспользуйте /done чтобы завершить')
-    global settingDz
-    global settingDzDate
-    settingDz = True
-    settingDzDate = message.text[7:]
+    global evntStatus
+    evntStatus.settingDz = True
+    evntStatus.settingDzDate = message.text[7:]
+
 
 
 @bot.message_handler(content_types=['text','photo','audio'])
@@ -127,12 +128,14 @@ def onMessage(message):
     if message.content_type == "text" and message.text[:1] == "/":
         bot.send_message(message.chat.id,"Команда не найдена: "+message.text)
     
-    if settingDz:
-        dba.setDz(settingDzDate, "hz", message.from_user.id, message.chat.id, message.message_id)
+    if evntStatus.settingDz:
+        d = Models.dz.Dz(evntStatus.settingDzDate, message.chat.id, message.message_id)
+        d.push()
+        #dba.setDz(settingDzDate, message.chat.id, message.message_id)
 
 
 def main():
-    dba.initDB()
+    dbacsessor.initDB()
     #dba.setDz("12.12.3333", "ukrmova", "12345678", "12313547578", "12")
     bot.polling(True)
 
