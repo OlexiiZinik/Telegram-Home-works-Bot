@@ -99,11 +99,14 @@ def startMessage(message):
 @bot.message_handler(regexp="/getDz \d\d.\d\d.\d\d\d\d")
 def onGetDz(message):
     logMessage(message)
-    #bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы запросили дз на {message.text[7:]}')
-    
-    for dz in Models.dz.getDz(message.text[7:]):
-        bot.forward_message(message.chat.id, dz[1], dz[2])
-        #bot.send_message(message.chat.id, f'{dz}')
+    try:
+        d = datetime.datetime.strptime(message.text[7:], "%d.%m.%Y")
+        for dz in Models.dz.getDz(message.text[7:]):
+            bot.forward_message(message.chat.id, dz[1], dz[2])
+    except Exception as e:
+        bot.send_message(message.chat.id, "Не правельно!\nукажите /getDz (день.месяц.год)\nПример /getDz 01.11.2019")
+
+
 
 
 @bot.callback_query_handler(func = lambda call: re.match("/getDz \d\d.\d\d.\d\d\d\d", call.data))
@@ -113,7 +116,7 @@ def onGetDzCallback(call):
     logMessage(msg)
     for dz in Models.dz.getDz(call.data[7:]):
         bot.forward_message(call.message.chat.id, dz[1], dz[2])
-
+    
 
 @bot.message_handler(commands=["getDz"])
 def onGetDzWithOutDate(message):
@@ -125,12 +128,16 @@ def onGetDzWithOutDate(message):
 @bot.message_handler(regexp="/setDz \d\d.\d\d.\d\d\d\d")
 def onSetDz(message):
     logMessage(message)
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
-    bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
-    global evntStatus
-    evntStatus.settingDz = True
-    evntStatus.settingDzDate = message.text[7:]
+    try:
+        d = datetime.datetime.strptime(message.text[7:], "%d.%m.%Y")
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+        bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
+        global evntStatus
+        evntStatus.settingDz = True
+        evntStatus.settingDzDate = message.text[7:]
+    except Exception as e:
+        bot.send_message(message.chat.id, "Не правельно!\nукажите /setDz (день.месяц.год)\nПример /setDz 01.11.2019")
 
 
 @bot.message_handler(commands=["setDz"])
@@ -149,7 +156,7 @@ def onSetDzCallback(call):
     bot.send_message(call.message.chat.id,f'{call.from_user.first_name}, Вы добавляете дз на {call.data[7:12]}', reply_markup=keyboard)
     global evntStatus
     evntStatus.settingDz = True
-    evntStatus.settingDzDate =call.data[7:]
+    evntStatus.settingDzDate = call.data[7:]
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "/setDzWithDate")
@@ -160,20 +167,29 @@ def onSetDzWithDate(call):
     bot.send_message(call.message.chat.id, "Укажите дату\n(день.месяц) или (день.месяц.год)\nПример 01.11 или 01.11.2019")
     def getDate(message): 
         if re.match("\d\d.\d\d.\d\d\d\d", message.text):
-            global evntStatus
-            evntStatus.settingDzDate = message.text
-            keyboard = types.InlineKeyboardMarkup()
-            keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
-            bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text}', reply_markup=keyboard)
+            try:
+                d = datetime.datetime.strptime(message.text, "%d.%m.%Y")
+                global evntStatus
+                evntStatus.settingDzDate = message.text
+                keyboard = types.InlineKeyboardMarkup()
+                keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+                bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text}', reply_markup=keyboard)
+                return
+            except Exception as e:
+                pass
         elif re.match("\d\d.\d\d", message.text):
-            date = datetime.datetime.strptime(message.text+"."+str(datetime.datetime.today().year), "%d.%m.%Y")
-            keyboard = types.InlineKeyboardMarkup()
-            keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
-            bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
-            evntStatus.settingDzDate = datetime.datetime.strftime(date,"%d.%m.%Y")
-        else:
-            bot.send_message(message.chat.id, "Не правельно!\nукажите (день.месяц) или (день.месяц.год)\nПример 01.11 или 01.11.2019")
-            bot.register_next_step_handler_by_chat_id(message.chat.id, getDate)
+            try:
+                date = datetime.datetime.strptime(message.text+"."+str(datetime.datetime.today().year), "%d.%m.%Y")
+                keyboard = types.InlineKeyboardMarkup()
+                keyboard.add(types.InlineKeyboardButton("Готово", callback_data="/done"))
+                bot.send_message(message.chat.id,f'{message.from_user.first_name}, Вы добавляете дз на {message.text[7:12]}', reply_markup=keyboard)
+                evntStatus.settingDzDate = datetime.datetime.strftime(date,"%d.%m.%Y")
+                return
+            except Exception as e:
+                pass
+        
+        bot.send_message(message.chat.id, "Не правельно!\nукажите (день.месяц) или (день.месяц.год)\nПример 01.11 или 01.11.2019")
+        bot.register_next_step_handler_by_chat_id(message.chat.id, getDate)
 
     bot.register_next_step_handler_by_chat_id(call.message.chat.id, getDate)
     evntStatus.settingDz = True
