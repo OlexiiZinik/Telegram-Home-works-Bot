@@ -2,8 +2,8 @@ import telebot
 import datetime
 from telebot import types
 
-
 import Models.dz
+
 
 def mainMenuKeyboard():
     pass
@@ -32,6 +32,7 @@ def selectDateKeyboard(searchExisting=True):
 
     keyboard.add(*buttons)
     return keyboard
+
 
 def getDz(bot, user):
     bot.send_message(user,"Выберете дату", reply_markup=selectDateKeyboard())
