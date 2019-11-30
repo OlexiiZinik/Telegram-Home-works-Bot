@@ -14,7 +14,7 @@ def selectDateKeyboard(searchExisting=True):
     buttons = []
     if searchExisting:
         for date in Models.dz.getExitstingDzDates():
-            buttons.append(types.InlineKeyboardButton(date.strftime("%d.%m"), callback_data='/getDz '+date.strftime("%d.%m.%Y")))
+            buttons.append(types.InlineKeyboardButton(date.strftime("%d.%m"), callback_data='/get_dz '+date.strftime("%d.%m.%Y")))
     else:
         date_list = []
         i = 1
@@ -27,7 +27,7 @@ def selectDateKeyboard(searchExisting=True):
             i += 1
 
         for date in date_list:
-            buttons.append(types.InlineKeyboardButton(date.strftime("%d.%m"), callback_data='/setDz '+date.strftime("%d.%m.%Y")))
+            buttons.append(types.InlineKeyboardButton(date.strftime("%d.%m"), callback_data='/set_dz '+date.strftime("%d.%m.%Y")))
         buttons.append(types.InlineKeyboardButton("Установить другую дату", callback_data='/setDzWithDate'))
 
     keyboard.add(*buttons)
