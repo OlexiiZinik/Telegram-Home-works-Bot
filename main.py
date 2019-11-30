@@ -22,10 +22,7 @@ logger.setLevel(logging.INFO)
 ch[0].setFormatter(formatter)
 ch[1].setFormatter(formatter)
 
-
 evntStatus = MISC.events.EventStatus()
-
-
 
 
 def logMessage(message, callback=False):
