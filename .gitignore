@@ -1,4 +1,5 @@
 .vscode
 DataBases/
+__pycahe__/
 *.pyc
 tmp

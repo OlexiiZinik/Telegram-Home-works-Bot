@@ -1,6 +1,8 @@
 import telebot
 import re
 import datetime
+import logging
+import sys
 from telebot import types
 
 import Models.dz
@@ -11,14 +13,22 @@ import MISC.events
 
 bot = telebot.TeleBot(cfg.Token)
 
+logger = telebot.logger
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
+ch = logging.StreamHandler(sys.stdout)
+logger.addHandler(ch)
+logger.setLevel(logging.INFO)
+ch.setFormatter(formatter)
+
+
 evntStatus = MISC.events.EventStatus()
 
 
 def logMessage(message, callback=False):
     if callback:
-        print(message.from_user.first_name, "@", message.from_user.id, "callback :", message.data)
+       logger.log(logging.INFO, str(message.from_user.first_name) + " @ " + str(message.from_user.id) + " on " + str(message.message.chat.id) + " callback : " + message.data)
     else:
-        print(message.from_user.first_name,"@",message.from_user.id, message.content_type , ":", message.text)
+       logger.log(logging.INFO, str(message.from_user.first_name) + " @ " + str(message.from_user.id) + " on " + str(message.chat.id) + " " + message.content_type + " : " + message.text)
 
 
 @bot.message_handler(commands=['start', 'help'])
