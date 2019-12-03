@@ -3,7 +3,7 @@ import datetime
 
 import config as cfg
 
-def getDz(date): #returns Dz array
+def getDz(date): #returns existing HM array
     try:
         d = datetime.datetime.strptime(date, "%d.%m.%Y")
     except:
@@ -19,7 +19,7 @@ def getDz(date): #returns Dz array
     conn.close()
     return ressult
 
-def getExitstingDzDates(): #retutns dates array
+def getExitstingDzDates(): #returns dates array, which were reserved in DB 
     conn = sqlite3.connect(cfg.DataBase)
     cursor = conn.cursor()
     cursor.execute(f"""SELECT date FROM HomeWorks""")
@@ -41,6 +41,7 @@ def validDate(date):
 class InvalidDateException(Exception):
     pass
 
+# Home work object
 class Dz ():
     def __init__(self, date, chatId, messageId):
         #date, dzAuhorChatId, dzAuthorMessageId
@@ -48,6 +49,7 @@ class Dz ():
         self.dzAuhorChatId = chatId
         self.dzAuthorMessageId = messageId
     
+    # Method which pushes home work (Telegram message pointer) into DB
     def push(self):
         conn = sqlite3.connect(cfg.DataBase)
         cursor = conn.cursor()
@@ -56,6 +58,6 @@ class Dz ():
         """)
         conn.commit()
         conn.close()
-
+    # Method which sends HM via Tegram forward message()
     def forward(self, bot, user):
         bot.forward_message(user, self.dzAuhorChatId, self.dzAuthorMessageId)

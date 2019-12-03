@@ -3,13 +3,14 @@ import datetime
 from telebot import types
 
 import Models.dz
+from MISC.languages import LANGUAGES as LNGS
 
 
 def mainMenuKeyboard():
     pass
 
-
-def selectDateKeyboard(searchExisting=True):
+# keyboard generator
+def selectDateKeyboard(langCode, searchExisting=True):
     keyboard = types.InlineKeyboardMarkup(row_width=3)
     buttons = []
     if searchExisting:
@@ -28,15 +29,15 @@ def selectDateKeyboard(searchExisting=True):
 
         for date in date_list:
             buttons.append(types.InlineKeyboardButton(date.strftime("%d.%m"), callback_data='/set_dz '+date.strftime("%d.%m.%Y")))
-        buttons.append(types.InlineKeyboardButton("Установить другую дату", callback_data='/setDzWithDate'))
+        buttons.append(types.InlineKeyboardButton(LNGS[langCode]['Select other date'], callback_data='/setDzWithDate'))
 
     keyboard.add(*buttons)
     return keyboard
 
 
-def getDz(bot, user):
-    bot.send_message(user,"Выберете дату", reply_markup=selectDateKeyboard())
+def getDz(bot, user, languageCode):
+    bot.send_message(user, LNGS[languageCode]['Select date'], reply_markup=selectDateKeyboard(languageCode))
 
 
-def setDz(bot, user):
-    bot.send_message(user,"Выберете дату", reply_markup=selectDateKeyboard(searchExisting=False))
+def setDz(bot, user, languageCode):
+    bot.send_message(user, LNGS[languageCode]['Select date'], reply_markup=selectDateKeyboard(languageCode, searchExisting=False))
