@@ -3,4 +3,4 @@ DataBases/
 __pycahe__/
 *.pyc
 *.log
-tmp
+_tmp
