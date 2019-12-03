@@ -30,5 +30,3 @@
   python main.py
   ```
 * Share your bot with your friends
-
-## Other language packages will be added soon
